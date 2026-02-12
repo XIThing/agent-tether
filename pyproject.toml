@@ -1,0 +1,83 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agent-tether"
+version = "0.2.0"
+description = "Tether your AI agents to human oversight through Telegram, Slack, and Discord"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [
+    { name = "xithing" },
+]
+keywords = ["ai", "agent", "telegram", "slack", "discord", "approval", "human-in-the-loop"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Communications :: Chat",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Typing :: Typed",
+]
+dependencies = [
+    "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+# Bridges
+telegram = ["python-telegram-bot>=21.0"]
+slack = ["slack-sdk>=3.0", "slack-bolt>=1.0"]
+discord = ["discord.py>=2.0"]
+bridges = [
+    "python-telegram-bot>=21.0",
+    "slack-sdk>=3.0",
+    "slack-bolt>=1.0",
+    "discord.py>=2.0",
+]
+# All features (currently just bridges)
+all = [
+    "python-telegram-bot>=21.0",
+    "slack-sdk>=3.0",
+    "slack-bolt>=1.0",
+    "discord.py>=2.0",
+]
+# Development
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "black",
+    "mypy",
+]
+
+[project.urls]
+Homepage = "https://github.com/xithing/agent-tether"
+Repository = "https://github.com/xithing/agent-tether"
+Issues = "https://github.com/xithing/agent-tether/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agent_tether"]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "PACKAGE_PLAN.md",
+    "PACKAGE_PLAN_REVISED.md",
+    "STATUS.md",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.black]
+line-length = 99
+target-version = ["py311"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
