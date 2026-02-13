@@ -368,7 +368,7 @@ class SlackBridge(TextCommandBridge):
             )
 
         except Exception as e:
-            logger.exception("Failed to attach to external session")
+            logger.warning("Failed to attach to external session", error=str(e))
             await self._reply(event, f"Failed to attach: {e}")
 
     async def _cmd_stop(self, event: dict) -> None:
