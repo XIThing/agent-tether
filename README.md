@@ -1,6 +1,14 @@
 # agent-tether
 
+[![Tests](https://github.com/larsderidder/agent-tether/actions/workflows/test.yml/badge.svg)](https://github.com/larsderidder/agent-tether/actions/workflows/test.yml)
+[![Publish to PyPI](https://github.com/larsderidder/agent-tether/actions/workflows/publish.yml/badge.svg)](https://github.com/larsderidder/agent-tether/actions/workflows/publish.yml)
+[![PyPI](https://img.shields.io/pypi/v/agent-tether)](https://pypi.org/project/agent-tether/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/agent-tether)](https://pypi.org/project/agent-tether/)
+[![License](https://img.shields.io/github/license/larsderidder/agent-tether)](LICENSE)
+
 Connect AI coding agents to human oversight through Telegram, Slack, and Discord.
+
+Status: Beta. APIs are stable and open to feedback.
 
 A Python library that provides chat platform bridges for supervising AI agents. Each bridge handles platform-specific formatting, thread management, approval flows with inline buttons, auto-approve timers, and command handling.
 
