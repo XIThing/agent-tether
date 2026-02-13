@@ -8,17 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2026-02-12
 
 ### Changed
-- **BREAKING**: Complete rewrite. Direct extraction of Tether's bridge architecture instead of a redesigned library.
+- **BREAKING**: Complete rewrite as a standalone library.
 - Replaced `Handlers` callback model with `BridgeInterface` abstract base class (push model)
 - Replaced `BridgeBase` with platform-specific implementations (`TelegramBridge`, `SlackBridge`, `DiscordBridge`)
-- Removed `Runner`, `RunnerEvents`, `RunnerRegistry` (runner protocol). These are now part of Tether itself.
+- Removed `Runner`, `RunnerEvents`, `RunnerRegistry` (runner protocol)
 - Removed standalone formatting, approval, batching, debounce, and router modules. All logic is now in `BridgeInterface` or platform implementations.
+- Replaced all internal HTTP calls with `BridgeCallbacks`, a dataclass of async functions provided by the host application. No more `httpx` dependency or assumption of a localhost API server.
+- Removed `api_port` and `api_token` from `BridgeConfig`
+- Switched from stdlib `logging` to `structlog`
 
 ### Added
+- `BridgeCallbacks` dataclass with 10 async callback slots (`create_session`, `send_input`, `stop_session`, `respond_to_permission`, `list_sessions`, `get_usage`, `check_directory`, `list_external_sessions`, `get_external_history`, `attach_external`)
 - `BridgeInterface` with shared helpers: auto-approve timers, approval/choice text parsing, error debouncing, notification batching, external session pagination, formatting
 - `BridgeManager` for multi-platform event routing
 - `BridgeSubscriber` for consuming store events and forwarding to bridges
-- `BridgeConfig` for dependency-free configuration
+- `BridgeConfig` for configuration (data directory, default adapter, error debounce)
 - Callbacks for store integration (`GetSessionDirectory`, `GetSessionInfo`, `OnSessionBound`)
 - Telegram `StateManager` for session-to-topic persistence
 - Discord `DiscordPairingState` for pairing code management
@@ -26,11 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Full command handling in all three bridges (help, status, list, attach, new, stop, usage)
 
 ### Removed
+- `httpx` dependency (replaced by `BridgeCallbacks`)
 - `agent_tether.runner` module (Runner protocol, RunnerEvents, RunnerRegistry, RunnerUnavailableError)
 - `agent_tether.models` module (Handlers, CommandDef, ApprovalRequest moved to base)
 - `agent_tether.platforms` package (replaced by top-level telegram/slack/discord packages)
 - `agent_tether.approval`, `agent_tether.batching`, `agent_tether.debounce`, `agent_tether.formatting`, `agent_tether.router`, `agent_tether.state` modules
-- No `structlog` dependency; uses stdlib `logging`
 
 ## [0.2.0] - 2026-02-12
 

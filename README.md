@@ -24,7 +24,9 @@ pip install agent-tether[all]        # All platforms
 ## Architecture
 
 ```
-Tether Server (localhost:8787)
+Your Application
+    │
+    ├── BridgeCallbacks       → You implement these to wire up your backend
     │
     ├── agent-tether bridges
     │     ├── TelegramBridge  → Telegram forum topics
@@ -37,30 +39,45 @@ Tether Server (localhost:8787)
 
 ### Core Components
 
+- **`BridgeCallbacks`**: Dataclass of async callbacks that you provide, connecting bridges to your session backend
 - **`BridgeInterface`**: Abstract base class with shared logic for auto-approve, approval parsing, error debouncing, and formatting
 - **`BridgeManager`**: Routes output, approvals, and status changes to the correct platform bridge
 - **`BridgeSubscriber`**: Consumes events from a store subscriber queue and forwards them to bridges
-- **`BridgeConfig`**: Dependency-free configuration (API port, data directory, error debounce)
+- **`BridgeConfig`**: Configuration (data directory, default adapter, error debounce)
 
 ## Quick Start
 
 ```python
 from agent_tether import (
+    BridgeCallbacks,
     BridgeConfig,
     BridgeManager,
-    BridgeSubscriber,
     TelegramBridge,
 )
-from agent_tether.telegram.state import StateManager
+
+# Implement callbacks to wire bridges to your backend
+callbacks = BridgeCallbacks(
+    create_session=my_create_session,
+    send_input=my_send_input,
+    stop_session=my_stop_session,
+    respond_to_permission=my_respond_to_permission,
+    list_sessions=my_list_sessions,
+    get_usage=my_get_usage,
+    check_directory=my_check_directory,
+    list_external_sessions=my_list_external,
+    get_external_history=my_get_history,
+    attach_external=my_attach_external,
+)
 
 # Configure
-config = BridgeConfig(api_port=8787, data_dir="/tmp/tether")
+config = BridgeConfig(data_dir="/tmp/agent-tether")
 
 # Create a Telegram bridge
 telegram = TelegramBridge(
     bot_token="BOT_TOKEN",
     forum_group_id=123456,
     config=config,
+    callbacks=callbacks,
     get_session_directory=lambda sid: "/home/user/project",
 )
 
@@ -68,10 +85,29 @@ telegram = TelegramBridge(
 manager = BridgeManager()
 manager.register_bridge("telegram", telegram)
 
-# Route events
+# Route events from your backend
 await manager.route_output("sess_1", "Starting work...", "telegram")
 await manager.route_status("sess_1", "running", "telegram")
 ```
+
+### BridgeCallbacks
+
+The `BridgeCallbacks` dataclass defines 10 async functions that connect agent-tether to your session backend:
+
+| Callback | Signature | Purpose |
+|---|---|---|
+| `create_session` | `(**kwargs) -> dict` | Create a new agent session |
+| `send_input` | `(session_id, text) -> None` | Send human input to a session |
+| `stop_session` | `(session_id) -> None` | Interrupt/stop a running session |
+| `respond_to_permission` | `(session_id, request_id, allow, message?) -> bool` | Approve or deny a permission request |
+| `list_sessions` | `() -> list[dict]` | List all active sessions |
+| `get_usage` | `(session_id) -> dict` | Get token/cost usage for a session |
+| `check_directory` | `(path) -> dict` | Validate a directory path |
+| `list_external_sessions` | `(**kwargs) -> list[dict]` | Discover running external sessions |
+| `get_external_history` | `(external_id, runner_type, limit) -> dict?` | Fetch history for an external session |
+| `attach_external` | `(**kwargs) -> dict` | Attach to an external session |
+
+All callbacks default to no-ops, so you only need to implement the ones your application uses.
 
 ### Approval Parsing
 
