@@ -5,9 +5,9 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-import logging
+import structlog
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 @dataclass
@@ -60,8 +60,7 @@ class StateManager:
         try:
             data = {
                 "mappings": {
-                    session_id: asdict(mapping)
-                    for session_id, mapping in self._mappings.items()
+                    session_id: asdict(mapping) for session_id, mapping in self._mappings.items()
                 },
             }
             self._path.parent.mkdir(parents=True, exist_ok=True)

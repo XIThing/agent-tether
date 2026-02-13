@@ -7,7 +7,7 @@ Each bridge implements platform-specific message formatting and API interactions
 from __future__ import annotations
 
 import asyncio
-import logging
+import structlog
 import os
 import time
 from abc import ABC, abstractmethod
@@ -21,7 +21,7 @@ from typing import Any, Callable, Awaitable
 from pydantic import BaseModel
 from typing import Literal
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 @dataclass
@@ -442,9 +442,7 @@ class BridgeInterface(ABC):
             return
         q_lower = q.lower()
         self._external_view = [
-            s
-            for s in self._cached_external
-            if q_lower in str(s.get("directory", "")).lower()
+            s for s in self._cached_external if q_lower in str(s.get("directory", "")).lower()
         ]
 
     def _format_external_page(
@@ -498,10 +496,7 @@ class BridgeInterface(ABC):
             if prompt_short:
                 lines.append(f"   {prompt_short}")
 
-        if (
-            not self._external_query
-            and len(self._cached_external) == _EXTERNAL_MAX_FETCH
-        ):
+        if not self._external_query and len(self._cached_external) == _EXTERNAL_MAX_FETCH:
             lines.append(f"\nShowing up to {_EXTERNAL_MAX_FETCH} sessions (API limit).")
         lines.append(f"\n{attach_cmd} <number> to attach.")
         return "\n".join(lines), page, total_pages
@@ -573,7 +568,6 @@ class BridgeInterface(ABC):
         """Silently approve a permission request via the API."""
         import httpx
 
-        
         try:
             async with httpx.AsyncClient() as client:
                 await client.post(
@@ -627,9 +621,7 @@ class BridgeInterface(ABC):
         if items:
             await self.send_auto_approve_batch(session_id, items)
 
-    async def send_auto_approve_batch(
-        self, session_id: str, items: list[tuple[str, str]]
-    ) -> None:
+    async def send_auto_approve_batch(self, session_id: str, items: list[tuple[str, str]]) -> None:
         """Send a batched auto-approve notification.
 
         Override in subclasses to format for the specific platform.
@@ -764,7 +756,6 @@ class BridgeInterface(ABC):
         """
         import httpx
 
-        
         try:
             async with httpx.AsyncClient() as client:
                 r = await client.post(
@@ -772,8 +763,7 @@ class BridgeInterface(ABC):
                     json={
                         "request_id": request_id,
                         "allow": allow,
-                        "message": message
-                        or ("Approved" if allow else "User denied permission"),
+                        "message": message or ("Approved" if allow else "User denied permission"),
                     },
                     headers=self._api_headers(),
                     timeout=10.0,
@@ -831,11 +821,7 @@ class BridgeInterface(ABC):
             return {"allow": True, "reason": None, "timer": None}
 
         # "deny: reason" or "deny reason" (multi-word)
-        if (
-            lower.startswith("deny:")
-            or lower.startswith("reject:")
-            or lower.startswith("no:")
-        ):
+        if lower.startswith("deny:") or lower.startswith("reject:") or lower.startswith("no:"):
             sep = stripped.index(":")
             reason = stripped[sep + 1 :].strip()
             return {"allow": False, "reason": reason or None, "timer": None}
@@ -910,16 +896,12 @@ class BridgeInterface(ABC):
     # ------------------------------------------------------------------
 
     @abstractmethod
-    async def on_output(
-        self, session_id: str, text: str, metadata: dict | None = None
-    ) -> None:
+    async def on_output(self, session_id: str, text: str, metadata: dict | None = None) -> None:
         """Handle agent output text."""
         pass
 
     @abstractmethod
-    async def on_approval_request(
-        self, session_id: str, request: ApprovalRequest
-    ) -> None:
+    async def on_approval_request(self, session_id: str, request: ApprovalRequest) -> None:
         """Handle an approval request."""
         pass
 

@@ -9,7 +9,26 @@ def escape_markdown(text: str) -> str:
 
     Telegram MarkdownV2 requires escaping many special characters.
     """
-    special_chars = ["_", "*", "[", "]", "(", ")", "~", "`", ">", "#", "+", "-", "=", "|", "{", "}", ".", "!"]
+    special_chars = [
+        "_",
+        "*",
+        "[",
+        "]",
+        "(",
+        ")",
+        "~",
+        "`",
+        ">",
+        "#",
+        "+",
+        "-",
+        "=",
+        "|",
+        "{",
+        "}",
+        ".",
+        "!",
+    ]
     for char in special_chars:
         text = text.replace(char, f"\\{char}")
     return text
@@ -123,5 +142,5 @@ def chunk_message(text: str, limit: int = 4096) -> list[str]:
 
     chunks = []
     for i in range(0, len(text), limit):
-        chunks.append(text[i:i + limit])
+        chunks.append(text[i : i + limit])
     return chunks

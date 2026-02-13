@@ -5,7 +5,7 @@ import json
 import os
 from typing import Any
 
-import logging
+import structlog
 
 from agent_tether.base import (
     ApprovalRequest,
@@ -25,7 +25,7 @@ from agent_tether.telegram.formatting import (
 )
 from agent_tether.telegram.state import StateManager
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 _TELEGRAM_TOPIC_NAME_MAX_LEN = 64
 _APPROVAL_TRUNCATE = 120  # max chars per value in compact approval view
@@ -63,9 +63,7 @@ class TelegramBridge(BridgeInterface):
         self._forum_group_id = forum_group_id
         self._app: Any = None
         data_dir = self._config.data_dir or "."
-        self._state = state_manager or StateManager(
-            os.path.join(data_dir, "telegram_state.json")
-        )
+        self._state = state_manager or StateManager(os.path.join(data_dir, "telegram_state.json"))
         self._state.load()
         # Cache full approval descriptions for "Show All" button: request_id → (tool, full_html)
         self._pending_descriptions: dict[str, tuple[str, str]] = {}
@@ -199,17 +197,11 @@ class TelegramBridge(BridgeInterface):
                 v_escaped = html_mod.escape(v)
                 label_escaped = html_mod.escape(label)
                 if key in ("file_path", "path", "notebook_path"):
-                    lines.append(
-                        f"<b>{label_escaped}</b>: <code>{v_escaped}</code>"
-                    )
+                    lines.append(f"<b>{label_escaped}</b>: <code>{v_escaped}</code>")
                 elif key in ("command",):
-                    lines.append(
-                        f"<b>{label_escaped}</b>:\n<pre>{v_escaped}</pre>"
-                    )
+                    lines.append(f"<b>{label_escaped}</b>:\n<pre>{v_escaped}</pre>")
                 elif key in ("old_string", "new_string", "content", "new_source"):
-                    lines.append(
-                        f"<b>{label_escaped}</b>:\n<pre>{v_escaped}</pre>"
-                    )
+                    lines.append(f"<b>{label_escaped}</b>:\n<pre>{v_escaped}</pre>")
                 else:
                     lines.append(f"<b>{label_escaped}</b>: {v_escaped}")
             return "\n".join(lines), truncated
@@ -238,9 +230,7 @@ class TelegramBridge(BridgeInterface):
                 v_escaped = html_mod.escape(v)
                 label_escaped = html_mod.escape(label)
                 if key in ("file_path", "path", "notebook_path"):
-                    lines.append(
-                        f"<b>{label_escaped}</b>: <code>{v_escaped}</code>"
-                    )
+                    lines.append(f"<b>{label_escaped}</b>: <code>{v_escaped}</code>")
                 elif key in (
                     "command",
                     "old_string",
@@ -248,9 +238,7 @@ class TelegramBridge(BridgeInterface):
                     "content",
                     "new_source",
                 ):
-                    lines.append(
-                        f"<b>{label_escaped}</b>:\n<pre>{v_escaped}</pre>"
-                    )
+                    lines.append(f"<b>{label_escaped}</b>:\n<pre>{v_escaped}</pre>")
                 else:
                     lines.append(f"<b>{label_escaped}</b>: {v_escaped}")
             return "\n".join(lines)
@@ -263,9 +251,7 @@ class TelegramBridge(BridgeInterface):
         If a topic with the same name already exists, append a number.
         """
         dir_short = (directory or "").rstrip("/").rsplit("/", 1)[-1] or "Session"
-        base_name = (dir_short[:1].upper() + dir_short[1:])[
-            :_TELEGRAM_TOPIC_NAME_MAX_LEN
-        ]
+        base_name = (dir_short[:1].upper() + dir_short[1:])[:_TELEGRAM_TOPIC_NAME_MAX_LEN]
 
         # Check existing topic names for duplicates
         existing_names = {m.name for m in self._state._mappings.values()}
@@ -420,14 +406,10 @@ class TelegramBridge(BridgeInterface):
 
         buttons = []
         if page > 1:
-            buttons.append(
-                InlineKeyboardButton("Prev", callback_data=f"list:page:{page - 1}")
-            )
+            buttons.append(InlineKeyboardButton("Prev", callback_data=f"list:page:{page - 1}"))
         buttons.append(InlineKeyboardButton("Refresh", callback_data="list:refresh"))
         if page < total_pages:
-            buttons.append(
-                InlineKeyboardButton("Next", callback_data=f"list:page:{page + 1}")
-            )
+            buttons.append(InlineKeyboardButton("Next", callback_data=f"list:page:{page + 1}"))
         return InlineKeyboardMarkup([buttons])
 
     # ------------------------------------------------------------------
@@ -517,9 +499,7 @@ class TelegramBridge(BridgeInterface):
 
         args = context.args
         if not args:
-            await update.message.reply_text(
-                "Usage: /attach <number> [force]\n\nRun /list first."
-            )
+            await update.message.reply_text("Usage: /attach <number> [force]\n\nRun /list first.")
             return
 
         # Parse optional "force" flag
@@ -532,19 +512,13 @@ class TelegramBridge(BridgeInterface):
             return
 
         if not self._cached_external:
-            await update.message.reply_text(
-                "No external sessions cached. Run /list first."
-            )
+            await update.message.reply_text("No external sessions cached. Run /list first.")
             return
         if not self._external_view:
-            await update.message.reply_text(
-                "No external sessions listed. Run /list first."
-            )
+            await update.message.reply_text("No external sessions listed. Run /list first.")
             return
         if index < 0 or index >= len(self._external_view):
-            await update.message.reply_text(
-                f"Invalid number. Use 1–{len(self._external_view)}."
-            )
+            await update.message.reply_text(f"Invalid number. Use 1–{len(self._external_view)}.")
             return
 
         external = self._external_view[index]
@@ -618,15 +592,11 @@ class TelegramBridge(BridgeInterface):
                     )
             except Exception:
                 # Replay is best-effort; it should never block attachment.
-                logger.exception(
-                    "Failed to replay external session history into Telegram topic"
-                )
+                logger.exception("Failed to replay external session history into Telegram topic")
 
             # Bind session to Telegram platform
             if self._on_session_bound:
-                await self._on_session_bound(
-                    session_id, "telegram", thread_info.get("thread_id")
-                )
+                await self._on_session_bound(session_id, "telegram", thread_info.get("thread_id"))
 
             dir_short = external.get("directory", "").rsplit("/", 1)[-1]
             await update.message.reply_text(
@@ -729,9 +699,7 @@ class TelegramBridge(BridgeInterface):
             )
             new_topic_id = int(session.get("platform_thread_id") or 0)
         except httpx.HTTPStatusError as e:
-            await update.message.reply_text(
-                f"Failed to create session: {e.response.text}"
-            )
+            await update.message.reply_text(f"Failed to create session: {e.response.text}")
             return
         except Exception as e:
             logger.exception("Failed to create session via /new")
@@ -739,7 +707,11 @@ class TelegramBridge(BridgeInterface):
             return
 
         # Confirm in the issuing topic.
-        agent_label = self._adapter_label(adapter) or self._adapter_label(self._config.default_adapter) or "Claude"
+        agent_label = (
+            self._adapter_label(adapter)
+            or self._adapter_label(self._config.default_adapter)
+            or "Claude"
+        )
         parts = [f"✅ New {agent_label} session created in {dir_short}."]
         if new_topic_id:
             # Telegram deep-link to the topic
@@ -875,9 +847,7 @@ class TelegramBridge(BridgeInterface):
             except Exception:
                 logger.exception("Failed to refresh external sessions")
                 try:
-                    await query.edit_message_text(
-                        "Failed to refresh external sessions."
-                    )
+                    await query.edit_message_text("Failed to refresh external sessions.")
                 except Exception:
                     pass
                 return
@@ -936,9 +906,7 @@ class TelegramBridge(BridgeInterface):
 
         session_id = self._state.get_session_for_topic(topic_id)
         if not session_id:
-            await update.message.reply_text(
-                "⚠️ No active session is linked to this topic."
-            )
+            await update.message.reply_text("⚠️ No active session is linked to this topic.")
             return
 
         text = update.message.text.strip()
@@ -958,9 +926,7 @@ class TelegramBridge(BridgeInterface):
             if ok:
                 await update.message.reply_text(f"❌ {message}")
             else:
-                await update.message.reply_text(
-                    "❌ Failed to deny. Request may have expired."
-                )
+                await update.message.reply_text("❌ Failed to deny. Request may have expired.")
             return
 
         # Pending choice request: allow replying with "1"/"2"/... or an exact label.
@@ -969,9 +935,7 @@ class TelegramBridge(BridgeInterface):
             selected = self.parse_choice_text(session_id, text)
             if selected:
                 try:
-                    await self._send_input_or_start_via_api(
-                        session_id=session_id, text=selected
-                    )
+                    await self._send_input_or_start_via_api(session_id=session_id, text=selected)
                     self.clear_pending_permission(session_id)
                     await update.message.reply_text(f"✅ Selected: {selected}")
                 except Exception:
@@ -1105,9 +1069,7 @@ class TelegramBridge(BridgeInterface):
                     return
 
                 selected = pending_req.options[idx]
-                await self._send_input_or_start_via_api(
-                    session_id=session_id, text=selected
-                )
+                await self._send_input_or_start_via_api(session_id=session_id, text=selected)
                 self.clear_pending_permission(session_id)
                 await query.edit_message_text(
                     text=f"{original_html}\n\n✅ {selected} by {username}",
@@ -1130,7 +1092,11 @@ class TelegramBridge(BridgeInterface):
                 allow = True
                 display_option = "Allow All (30m)"
             elif option_selected == "AllowDir":
-                _dir = self._get_session_directory(session_id) if self._get_session_directory else None
+                _dir = (
+                    self._get_session_directory(session_id)
+                    if self._get_session_directory
+                    else None
+                )
                 if _dir:
                     self.set_allow_directory(_dir)
                     dir_short = _dir.rstrip("/").rsplit("/", 1)[-1] or "dir"
@@ -1202,9 +1168,7 @@ class TelegramBridge(BridgeInterface):
     # Bridge interface (outgoing events)
     # ------------------------------------------------------------------
 
-    async def on_output(
-        self, session_id: str, text: str, metadata: dict | None = None
-    ) -> None:
+    async def on_output(self, session_id: str, text: str, metadata: dict | None = None) -> None:
         """Send output text to the session's Telegram topic."""
         self._stop_typing(session_id)
         if not self._app:
@@ -1241,9 +1205,7 @@ class TelegramBridge(BridgeInterface):
                         topic_id=topic_id,
                     )
 
-    async def send_auto_approve_batch(
-        self, session_id: str, items: list[tuple[str, str]]
-    ) -> None:
+    async def send_auto_approve_batch(self, session_id: str, items: list[tuple[str, str]]) -> None:
         """Send a batched auto-approve notification to Telegram."""
         if not self._app:
             return
@@ -1314,9 +1276,7 @@ class TelegramBridge(BridgeInterface):
         """Stop the typing indicator for the session."""
         self._stop_typing(session_id)
 
-    async def on_approval_request(
-        self, session_id: str, request: ApprovalRequest
-    ) -> None:
+    async def on_approval_request(self, session_id: str, request: ApprovalRequest) -> None:
         """Send an approval request with inline keyboard buttons.
 
         Supports:
@@ -1435,9 +1395,7 @@ class TelegramBridge(BridgeInterface):
                     f"Allow {tool_name} (30m)",
                     callback_data=f"approval:{rid}:AllowTool:{tool_name}",
                 ),
-                InlineKeyboardButton(
-                    "Allow All (30m)", callback_data=f"approval:{rid}:AllowAll"
-                ),
+                InlineKeyboardButton("Allow All (30m)", callback_data=f"approval:{rid}:AllowAll"),
             ]
             rows.append(row_timers)
             # Directory-scoped timer button
@@ -1454,11 +1412,7 @@ class TelegramBridge(BridgeInterface):
                 )
         if was_truncated:
             rows.append(
-                [
-                    InlineKeyboardButton(
-                        "Show All", callback_data=f"approval:{rid}:ShowAll"
-                    )
-                ]
+                [InlineKeyboardButton("Show All", callback_data=f"approval:{rid}:ShowAll")]
             )
 
         reply_markup = InlineKeyboardMarkup(rows)

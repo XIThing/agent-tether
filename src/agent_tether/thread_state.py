@@ -36,4 +36,3 @@ def save_mapping(*, path: Path, mapping: dict[str, str]) -> None:
         json.dumps(dict(sorted(mapping.items())), indent=2, sort_keys=True) + "\n",
         "utf-8",
     )
-

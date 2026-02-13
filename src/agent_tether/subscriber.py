@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import asyncio
 import json
-import logging
+import structlog
 from typing import Callable
 
 from agent_tether.base import ApprovalRequest
 from agent_tether.manager import BridgeManager
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 # Callback types for store integration
 NewSubscriberFn = Callable[[str], asyncio.Queue]  # (session_id) -> Queue
@@ -177,9 +177,7 @@ class BridgeSubscriber:
 
                     elif event_type == "error":
                         msg = data.get("message", "Unknown error")
-                        await bridge.on_status_change(
-                            session_id, "error", {"message": msg}
-                        )
+                        await bridge.on_status_change(session_id, "error", {"message": msg})
 
                 except Exception:
                     logger.exception(

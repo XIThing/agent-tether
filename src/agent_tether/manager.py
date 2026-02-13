@@ -4,11 +4,11 @@ The manager maintains a registry of active bridges and routes events to the
 appropriate platform based on session configuration.
 """
 
-import logging
+import structlog
 
 from agent_tether.base import ApprovalRequest, BridgeInterface
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class BridgeManager:
@@ -115,9 +115,7 @@ class BridgeManager:
 
         await bridge.on_status_change(session_id, status, metadata)
 
-    async def create_thread(
-        self, session_id: str, session_name: str, platform: str
-    ) -> dict:
+    async def create_thread(self, session_id: str, session_name: str, platform: str) -> dict:
         """Create a messaging thread on the specified platform.
 
         Args:

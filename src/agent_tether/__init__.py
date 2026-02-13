@@ -38,6 +38,7 @@ def __getattr__(name: str):
     if name == "TelegramBridge":
         try:
             from agent_tether.telegram.bot import TelegramBridge
+
             return TelegramBridge
         except ImportError:
             raise ImportError(
@@ -47,6 +48,7 @@ def __getattr__(name: str):
     if name == "SlackBridge":
         try:
             from agent_tether.slack.bot import SlackBridge
+
             return SlackBridge
         except ImportError:
             raise ImportError(
@@ -56,6 +58,7 @@ def __getattr__(name: str):
     if name == "DiscordBridge":
         try:
             from agent_tether.discord.bot import DiscordBridge
+
             return DiscordBridge
         except ImportError:
             raise ImportError(
