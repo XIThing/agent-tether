@@ -12,6 +12,7 @@ from agent_tether.base import (
     OnSessionBound,
 )
 from agent_tether.manager import BridgeManager
+from agent_tether.runner.protocol import Runner, RunnerEvents, RunnerUnavailableError
 from agent_tether.subscriber import BridgeSubscriber
 
 __all__ = [
@@ -28,6 +29,10 @@ __all__ = [
     # Manager and subscriber
     "BridgeManager",
     "BridgeSubscriber",
+    # Runner protocol
+    "Runner",
+    "RunnerEvents",
+    "RunnerUnavailableError",
     # Platform bridges (lazy loaded)
     "TelegramBridge",
     "SlackBridge",
